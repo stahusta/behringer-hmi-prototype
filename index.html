@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1440, initial-scale=1.0">
+  <title>Behringer HMI Panel</title>
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --red: #D2252D;
+      --red-from: #FB2C36;
+      --red-to: #82181A;
+      --blue: #1B7EFF;
+      --border: #D1D5DC;
+      --text-dark: #364153;
+      --text-medium: #4A5565;
+      --bg-light: #F3F4F6;
+      --border-light: #E5E7EB;
+      --white: #FFFFFF;
+      --radius: 8px;
+      --gap: 16px;
+    }
+
+    html {
+      height: 100%;
+      background: #000;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: var(--white);
+      color: var(--text-dark);
+      width: 1440px;
+      height: 880px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: var(--gap);
+      user-select: none;
+      margin: 0 auto;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    /* ==================== HEADER ==================== */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 72px;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      height: 72px;
+      width: 135px;
+      display: block;
+      line-height: 0;
+    }
+
+    .logo svg {
+      width: 135px;
+      height: 72px;
+      display: block;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      background: var(--bg-light);
+      border-left: 1px solid var(--border-light);
+      border-radius: 10px 0 0 10px;
+      width: 201.7px;
+      height: 63px;
+      padding: 0;
+      position: relative;
+    }
+
+    .battery-icon {
+      width: 24px;
+      height: 40px;
+      border: 1px solid black;
+      position: absolute;
+      left: 17px;
+      top: 11.5px;
+    }
+
+    .battery-icon .fill {
+      position: absolute;
+      bottom: 1px;
+      left: 1px;
+      right: 1px;
+      height: 15px;
+      background: var(--blue);
+    }
+
+    .battery-line {
+      position: absolute;
+      left: 1px;
+      right: 1px;
+      height: 1px;
+      background: black;
+    }
+
+    .battery-line:nth-child(2) { top: 9.5px; }
+    .battery-line:nth-child(3) { top: 19px; }
+    .battery-line:nth-child(4) { top: 28.5px; }
+
+    .datetime {
+      display: flex;
+      flex-direction: column;
+      font-size: 14px;
+      color: var(--text-medium);
+      line-height: 20px;
+      position: absolute;
+      left: 57px;
+      top: 11.5px;
+      width: 64.7px;
+      height: 40px;
+    }
+
+    .menu-btn {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      cursor: pointer;
+      border-radius: 4px;
+      border: none;
+      background: transparent;
+      transition: background 0.15s;
+      position: absolute;
+      right: 8px;
+      top: 7.5px;
+    }
+
+    .menu-btn:hover { background: rgba(0,0,0,0.06); }
+    .menu-btn:active { background: rgba(0,0,0,0.12); }
+
+    .menu-btn span {
+      display: block;
+      width: 20px;
+      height: 2px;
+      background: var(--text-dark);
+      border-radius: 1px;
+    }
+
+    /* ==================== DASHBOARD ==================== */
+    .dashboard {
+      display: flex;
+      align-items: stretch;
+      gap: var(--gap);
+      padding: 0 var(--gap);
+      height: 420px;
+      flex-shrink: 0;
+    }
+
+    /* +/- Buttons */
+    .side-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 120px;
+      flex-shrink: 0;
+    }
+
+    .big-btn {
+      flex: 1;
+      width: 120px;
+      border: 2px solid var(--blue);
+      border-radius: var(--radius);
+      background: linear-gradient(to bottom, var(--white) 0%, #999 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+      padding: 2px;
+    }
+
+    .big-btn:hover {
+      border-color: #0060e0;
+      box-shadow: 0 0 0 2px rgba(27, 126, 255, 0.2);
+      background: linear-gradient(to bottom, #999 0%, var(--white) 100%);
+    }
+
+    .big-btn:active {
+      transform: scale(0.97);
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    .big-btn svg {
+      width: 48px;
+      height: 48px;
+    }
+
+    /* Gauge blocks (Vc / Vf) */
+    .block {
+      flex: 1;
+      min-width: 0;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--white);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: var(--gap);
+      padding: 18px 2px;
+    }
+
+    .gauge-value {
+      font-size: 48px;
+      color: var(--red);
+      line-height: 1;
+    }
+
+    .gauge-circle {
+      width: 194px;
+      height: 194px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--red-from) 0%, var(--red-to) 100%);
+      border: 26px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+      flex-shrink: 0;
+    }
+
+    .gauge-circle span {
+      font-size: 30px;
+      color: var(--white);
+      line-height: 36px;
+    }
+
+    .gauge-label {
+      font-size: 32px;
+      color: var(--text-dark);
+      text-align: center;
+    }
+
+    /* Material info block */
+    .block-info {
+      flex: 1;
+      min-width: 0;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--white);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 10px;
+    }
+
+    .info-rows {
+      display: flex;
+      flex-direction: column;
+      gap: var(--gap);
+    }
+
+    .info-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 24px;
+      color: var(--text-dark);
+      height: 28px;
+    }
+
+    .info-row .shape-icon {
+      width: 28px;
+      height: 28px;
+      background: #3B3D3E;
+      border-radius: 4px;
+    }
+
+    .counters {
+      display: flex;
+      gap: 24px;
+      height: 162px;
+    }
+
+    .counter-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+    }
+
+    .gauge-circle--small {
+      width: 162px;
+      height: 162px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--red-from) 0%, var(--red-to) 100%);
+      border: 26px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+    }
+
+    .gauge-circle--small span {
+      font-size: 30px;
+      color: var(--white);
+      line-height: 36px;
+    }
+
+    /* ==================== TILE GRID ==================== */
+    .grid-area {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--gap);
+      padding: 0 var(--gap) var(--gap);
+      flex-shrink: 0;
+    }
+
+    .tile {
+      width: 162px;
+      height: 162px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tile:active {
+      transform: scale(0.97);
+    }
+
+    .tile.selected {
+      border-color: #00A63E;
+      border-width: 3px;
+    }
+
+    .tile-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      padding: 14px;
+    }
+
+    .tile-icon svg,
+    .tile-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .tile-text {
+      font-size: 20px;
+      color: var(--text-dark);
+      text-align: center;
+      padding: 14px;
+      line-height: 1.2;
+    }
+
+    .tile-plus {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      font-size: 18px;
+      color: var(--border);
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .tile-afc {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 20px;
+      width: 100%;
+      height: 100%;
+    }
+
+    .tile-afc .afc-title {
+      font-size: 36px;
+      font-style: italic;
+      color: var(--text-dark);
+      line-height: 1;
+    }
+
+    .tile-afc .afc-sub {
+      font-size: 16px;
+      color: var(--text-dark);
+      line-height: 1;
+      margin-top: 2px;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== HEADER ==================== -->
+  <header class="header">
+    <div class="logo">
+      <svg width="135" height="72" viewBox="0 0 135 72" fill="none" xmlns="http://www.w3.org/2000/svg"><g clip-path="url(#clip0_1_373)"><path d="M132.235 7.55884H4.38562V33.8233H132.235V7.55884Z" fill="white"/><path d="M135 40.3296H0V43.4871H135V40.3296Z" fill="#952D45"/><path d="M135 47.4578H0V50.6152H135V47.4578Z" fill="#952D45"/><path d="M135 54.5861H0V57.7435H135V54.5861Z" fill="#952D45"/><path d="M135 61.7142H0V64.8717H135V61.7142Z" fill="#952D45"/><path d="M135 68.8425H0V72H135V68.8425Z" fill="#952D45"/><path d="M57.8707 17.0312H57.4417H54.8676V20.9063H57.4417H57.8231C58.9671 20.9063 60.0635 20.1409 60.0635 19.0406C60.0635 17.9402 59.2055 17.0312 57.8707 17.0312Z" fill="#952D45"/><path d="M14.2055 22.2937H13.7288H10.535V27.604H13.7288H14.3009C15.7309 27.604 16.9227 26.408 16.9227 24.9728C16.9227 23.4897 15.7309 22.2937 14.2055 22.2937Z" fill="#952D45"/><path d="M125.228 19.0405C125.228 17.8924 124.37 16.9834 123.083 16.9834H122.654H120.032V20.9063H122.654H122.987C124.131 20.9063 125.228 20.1887 125.228 19.0405Z" fill="#952D45"/><path d="M0 0V36.598H135V0H0ZM21.4036 26.0253C21.2606 28.9914 19.1155 31.6226 15.9693 31.6226H13.7288H6.43538C6.34004 31.6226 6.2447 31.5269 6.2447 31.4312V10.6684C6.2447 10.5728 6.34004 10.4771 6.43538 10.4771H13.7288H15.6833C17.9237 10.4771 20.4502 12.3907 20.8792 15.1176C21.2129 17.6532 20.5455 19.4711 18.6388 20.715C20.1642 21.5282 21.4989 23.3462 21.4036 26.0253ZM34.608 31.192C34.608 31.2877 34.5127 31.3834 34.4174 31.3834H23.4057C23.3104 31.3834 23.215 31.2877 23.215 31.192V14.113C23.215 14.0173 23.3104 13.9216 23.4057 13.9216H34.179C34.2744 13.9216 34.3697 14.0173 34.3697 14.113V17.414C34.3697 17.5096 34.2744 17.6053 34.179 17.6053H27.0286V20.9063H33.035C33.1303 20.9063 33.2256 21.002 33.2256 21.0977V24.0159C33.2256 24.1116 33.1303 24.2073 33.035 24.2073H27.0286V28.0824H34.4174C34.5127 28.0824 34.608 28.1781 34.608 28.2738V31.192ZM49.0996 31.192C49.0996 31.2877 49.0042 31.3834 48.9089 31.3834H45.4767C45.3814 31.3834 45.286 31.2877 45.286 31.192V24.2073H40.1377V31.192C40.1377 31.2877 40.0424 31.3834 39.947 31.3834H36.4672C36.3718 31.3834 36.2765 31.2877 36.2765 31.192V14.0651C36.2765 13.9694 36.3718 13.8738 36.4672 13.8738H39.947C40.0424 13.8738 40.1377 13.9694 40.1377 14.0651V20.8106H45.2383V14.0651C45.2383 13.9694 45.3337 13.8738 45.429 13.8738H48.8612C48.9566 13.8738 49.0519 13.9694 49.0519 14.0651V31.192H49.0996ZM64.4015 31.4312L60.5879 31.4791C60.5402 31.4791 60.4449 31.3834 60.3972 31.3355L57.3941 24.303H54.9629V31.1442C54.9629 31.2399 54.8676 31.3355 54.7722 31.3355H51.34C51.2447 31.3355 51.1494 31.2399 51.1494 31.1442V14.0173C51.1494 13.9216 51.2447 13.8259 51.34 13.8259H57.4417H59.3485C62.0657 13.8259 63.7818 16.2179 63.9725 18.3708C64.1155 20.2844 63.2097 22.5329 61.1123 23.2983L64.6398 31.1442C64.6875 31.3355 64.5922 31.4312 64.4015 31.4312ZM69.8358 31.192C69.8358 31.2877 69.7405 31.3834 69.6451 31.3834H65.9746C65.8792 31.3834 65.7839 31.2877 65.7839 31.192V14.0173C65.7839 13.9216 65.8792 13.8259 65.9746 13.8259H69.6451C69.7405 13.8259 69.8358 13.9216 69.8358 14.0173V31.192ZM85.6621 31.1442C85.6621 31.2399 85.5667 31.3355 85.4714 31.3355H81.4672C81.4195 31.3355 81.3242 31.2877 81.2765 31.2399L75.5085 18.61V31.1442C75.5085 31.2399 75.4131 31.3355 75.3178 31.3355H71.8379C71.7426 31.3355 71.6472 31.2399 71.6472 31.1442V14.0651C71.6472 13.9694 71.7426 13.8738 71.8379 13.8738H76.9386C76.9862 13.8738 77.0816 13.9694 77.1292 14.0173L81.7532 24.6379V14.0651C81.7532 13.9694 81.8485 13.8738 81.9438 13.8738H85.4714C85.5667 13.8738 85.6621 13.9694 85.6621 14.0651V31.1442ZM101.536 31.2399C101.536 31.3356 101.441 31.4312 101.345 31.4312H98.8665C98.8188 31.4312 98.7235 31.3834 98.6758 31.3355L98.2468 30.5223C96.4354 32.1967 93.0032 32.0053 90.9057 31.0007C88.6652 29.9003 86.9968 26.5993 87.0922 22.8678C87.2828 18.0359 88.9513 13.491 94.7193 13.4432C98.5805 13.3953 101.202 16.4093 101.298 19.2319C101.298 19.3276 101.202 19.4233 101.107 19.4233L97.8655 19.9017C97.7225 19.9017 97.6271 19.8538 97.6271 19.7103C97.6271 18.7535 96.7214 16.5528 94.5763 16.5528C93.0032 16.5528 91.2871 17.9402 91.3347 22.9635C91.3347 26.408 92.5742 28.3694 94.4333 28.5608C96.4354 28.7043 97.6271 27.6518 97.6271 26.408V25.499H94.5763C94.4809 25.499 94.3856 25.4033 94.3856 25.3076V22.3894C94.3856 22.2937 94.4809 22.198 94.5763 22.198H101.298C101.393 22.198 101.488 22.2937 101.488 22.3894L101.536 31.2399ZM114.979 31.0963C114.979 31.192 114.883 31.2877 114.788 31.2877H103.776C103.681 31.2877 103.586 31.192 103.586 31.0963V14.0173C103.586 13.9216 103.681 13.8259 103.776 13.8259H114.55C114.645 13.8259 114.74 13.9216 114.74 14.0173V17.3183C114.74 17.414 114.645 17.5096 114.55 17.5096H107.352V20.8106H113.406C113.501 20.8106 113.596 20.9063 113.596 21.002V23.9203C113.596 24.0159 113.501 24.1116 113.406 24.1116H107.352V27.9867H114.788C114.883 27.9867 114.979 28.0824 114.979 28.1781V31.0963ZM129.518 31.4312L125.704 31.4791C125.657 31.4791 125.561 31.4312 125.514 31.3355L122.511 24.303H120.079V31.1442C120.079 31.2399 119.984 31.3355 119.889 31.3355H116.457C116.361 31.3355 116.266 31.2399 116.266 31.1442V13.9694C116.266 13.8738 116.361 13.7781 116.457 13.7781H122.654H124.465C127.182 13.7781 128.898 16.1223 129.089 18.3229C129.232 20.1887 128.326 22.4851 126.229 23.2027L129.756 31.0963C129.804 31.2877 129.709 31.4312 129.518 31.4312Z" fill="#952D45"/><path d="M13.9672 18.8491C15.3019 18.8491 16.3506 17.7488 16.3506 16.4571C16.3506 15.1176 15.2543 14.0651 13.9672 14.0651H13.7765H10.6303V18.8491H13.7765H13.9672Z" fill="#952D45"/></g><defs><clipPath id="clip0_1_373"><rect width="135" height="72" fill="white"/></clipPath></defs></svg>
+    </div>
+    <div class="header-right">
+      <div class="battery-icon">
+        <div class="fill"></div>
+        <div class="battery-line"></div>
+        <div class="battery-line"></div>
+        <div class="battery-line"></div>
+      </div>
+      <div class="datetime">
+        <span>11.02.2026</span>
+        <span>16:56:26</span>
+      </div>
+      <button class="menu-btn" title="Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== DASHBOARD ==================== -->
+  <section class="dashboard">
+    <div class="side-buttons">
+      <button class="big-btn" data-target="vc" data-dir="up" title="Zwiększ Vc">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M24 0C37.2548 0 48 10.7452 48 24C48 37.2548 37.2548 48 24 48C10.7452 48 0 37.2548 0 24C0 10.7452 10.7452 0 24 0ZM24 10C22.8954 10 22 10.8954 22 12V22H12C10.8954 22 10 22.8954 10 24C10 25.1046 10.8954 26 12 26H22V36C22 37.1046 22.8954 38 24 38C25.1046 38 26 37.1046 26 36V26H36C37.1046 26 38 25.1046 38 24C38 22.8954 37.1046 22 36 22H26V12C26 10.8954 25.1046 10 24 10Z" fill="#67757E"/></svg>
+      </button>
+      <button class="big-btn" data-target="vc" data-dir="down" title="Zmniejsz Vc">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M24 0C37.2548 0 48 10.7452 48 24C48 37.2548 37.2548 48 24 48C10.7452 48 0 37.2548 0 24C0 10.7452 10.7452 0 24 0ZM12 22C10.8954 22 10 22.8954 10 24C10 25.1046 10.8954 26 12 26H36C37.1046 26 38 25.1046 38 24C38 22.8954 37.1046 22 36 22H12Z" fill="#67757E"/></svg>
+      </button>
+    </div>
+
+    <div class="block">
+      <span class="gauge-value" id="vc-value">92,2</span>
+      <div class="gauge-circle"><span id="vc-actual">0,0</span></div>
+      <span class="gauge-label">Vc [m/min]</span>
+    </div>
+
+    <div class="block-info">
+      <div class="info-rows">
+        <div class="info-row">
+          <span>Materiał</span>
+          <span>S235JR</span>
+        </div>
+        <div class="info-row">
+          <span>Szerokość</span>
+          <span>2000,0 mm</span>
+        </div>
+        <div class="info-row">
+          <span>Forma</span>
+          <div class="shape-icon"></div>
+        </div>
+      </div>
+      <div class="counters">
+        <div class="counter-wrap">
+          <div class="gauge-circle--small"><span>4</span></div>
+        </div>
+        <div class="counter-wrap">
+          <div class="gauge-circle--small"><span>0,00</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="block">
+      <span class="gauge-value" id="vf-value">34,8</span>
+      <div class="gauge-circle"><span id="vf-actual">0,0</span></div>
+      <span class="gauge-label">Vf [mm/min]</span>
+    </div>
+
+    <div class="side-buttons">
+      <button class="big-btn" data-target="vf" data-dir="up" title="Zwiększ Vf">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M24 0C37.2548 0 48 10.7452 48 24C48 37.2548 37.2548 48 24 48C10.7452 48 0 37.2548 0 24C0 10.7452 10.7452 0 24 0ZM24 10C22.8954 10 22 10.8954 22 12V22H12C10.8954 22 10 22.8954 10 24C10 25.1046 10.8954 26 12 26H22V36C22 37.1046 22.8954 38 24 38C25.1046 38 26 37.1046 26 36V26H36C37.1046 26 38 25.1046 38 24C38 22.8954 37.1046 22 36 22H26V12C26 10.8954 25.1046 10 24 10Z" fill="#67757E"/></svg>
+      </button>
+      <button class="big-btn" data-target="vf" data-dir="down" title="Zmniejsz Vf">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M24 0C37.2548 0 48 10.7452 48 24C48 37.2548 37.2548 48 24 48C10.7452 48 0 37.2548 0 24C0 10.7452 10.7452 0 24 0ZM12 22C10.8954 22 10 22.8954 10 24C10 25.1046 10.8954 26 12 26H36C37.1046 26 38 25.1046 38 24C38 22.8954 37.1046 22 36 22H12Z" fill="#67757E"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- ==================== TILE GRID ==================== -->
+  <section class="grid-area">
+    <!-- Row 1: 8 tiles -->
+    <div class="tile" data-action="afc">
+      <div class="tile-icon">
+        <img src="assets/Type=1.svg" alt="AFC">
+      </div>
+    </div>
+
+    <div class="tile" data-action="clamp">
+      <div class="tile-icon">
+        <img src="assets/Type=2.svg" alt="Clamp">
+      </div>
+    </div>
+
+    <div class="tile" data-action="manual-joc">
+      <div class="tile-icon">
+        <img src="assets/Type=3.svg" alt="JOC">
+      </div>
+    </div>
+
+    <div class="tile" data-action="manual-doc">
+      <div class="tile-icon">
+        <img src="assets/Type=4.svg" alt="DOC">
+      </div>
+    </div>
+
+    <div class="tile" data-action="coolant">
+      <div class="tile-icon">
+        <img src="assets/Type=5.svg" alt="Coolant">
+      </div>
+    </div>
+
+    <div class="tile" data-action="transport">
+      <div class="tile-icon">
+        <img src="assets/Type=6.svg" alt="Transport">
+      </div>
+    </div>
+
+    <div class="tile" data-action="light">
+      <div class="tile-icon">
+        <img src="assets/Type=7.svg" alt="Light">
+      </div>
+    </div>
+
+    <div class="tile" data-action="timer">
+      <div class="tile-icon">
+        <img src="assets/Type=8.svg" alt="Timer">
+      </div>
+    </div>
+
+    <!-- Row 2: 5 tiles -->
+    <div class="tile" data-action="auto-end">
+      <div class="tile-text">Koniec trybu automatycznego nad materiałem</div>
+    </div>
+
+    <div class="tile" data-action="position-1">
+      <div class="tile-icon">
+        <img src="assets/Type=10.svg" alt="Position 1">
+      </div>
+    </div>
+
+    <div class="tile" data-action="position-2">
+      <div class="tile-icon">
+        <img src="assets/Type=11.svg" alt="Position 2">
+      </div>
+    </div>
+
+    <div class="tile" data-action="position-3">
+      <div class="tile-icon">
+        <img src="assets/Type=12.svg" alt="Position 3">
+      </div>
+    </div>
+
+    <div class="tile" data-action="position-4">
+      <div class="tile-icon">
+        <img src="assets/Type=13.svg" alt="Position 4">
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // State
+    let vcValue = 92.2;
+    let vfValue = 34.8;
+
+    function formatVal(n) {
+      return n.toFixed(1).replace('.', ',');
+    }
+
+    function updateDisplay() {
+      document.getElementById('vc-value').textContent = formatVal(vcValue);
+      document.getElementById('vf-value').textContent = formatVal(vfValue);
+    }
+
+    // Big buttons +/-
+    document.querySelectorAll('.big-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.target;
+        const dir = btn.dataset.dir;
+        const delta = dir === 'up' ? 1 : -1;
+
+        if (target === 'vc') {
+          vcValue = Math.max(0, +(vcValue + delta).toFixed(1));
+        } else {
+          vfValue = Math.max(0, +(vfValue + delta).toFixed(1));
+        }
+        updateDisplay();
+      });
+    });
+
+    // Tile toggle
+    document.querySelectorAll('.tile').forEach(tile => {
+      tile.addEventListener('click', () => tile.classList.toggle('selected'));
+    });
+
+    // Live clock
+    function updateClock() {
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      const d = now.getDate(), m = now.getMonth() + 1, y = now.getFullYear();
+      const dt = document.querySelector('.datetime');
+      if (dt) {
+        dt.children[0].textContent = `${pad(d)}.${pad(m)}.${y}`;
+        dt.children[1].textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+      }
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>
