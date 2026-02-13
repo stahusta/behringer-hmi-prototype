@@ -244,6 +244,74 @@
       line-height: 36px;
     }
 
+    /* Speedometer arc gauges */
+    .gauge-wrapper {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      flex-shrink: 0;
+    }
+
+    .gauge-arcs {
+      width: 100%;
+      height: 100%;
+      transform: rotate(150deg);
+    }
+
+    .gauge-arcs circle {
+      fill: none;
+      stroke-linecap: butt;
+    }
+
+    .arc-track-outer {
+      stroke: var(--border);
+      stroke-width: 12;
+      stroke-dasharray: 423.07 211.53;
+    }
+
+    .arc-track-inner {
+      stroke: var(--border);
+      stroke-width: 12;
+      stroke-dasharray: 347.67 173.83;
+    }
+
+    .arc-fill-outer {
+      stroke: var(--red);
+      stroke-width: 12;
+      stroke-dasharray: 423.07 634.60;
+      stroke-dashoffset: 423.07;
+      transition: stroke-dashoffset 0.5s ease;
+    }
+
+    .arc-fill-inner {
+      stroke: var(--blue);
+      stroke-width: 12;
+      stroke-dasharray: 347.67 521.50;
+      stroke-dashoffset: 347.67;
+      transition: stroke-dashoffset 0.5s ease;
+    }
+
+    .gauge-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 142px;
+      height: 142px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--red-from) 0%, var(--red-to) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+    }
+
+    .gauge-center span {
+      font-size: 30px;
+      color: var(--white);
+      line-height: 36px;
+    }
+
     .gauge-label {
       font-size: 32px;
       color: var(--text-dark);
@@ -447,7 +515,15 @@
 
     <div class="block">
       <span class="gauge-value" id="vc-value">92,2</span>
-      <div class="gauge-circle"><span id="vc-actual">0,0</span></div>
+      <div class="gauge-wrapper">
+        <svg class="gauge-arcs" viewBox="0 0 220 220">
+          <circle class="arc-track-outer" cx="110" cy="110" r="101" />
+          <circle class="arc-fill-outer" cx="110" cy="110" r="101" id="vc-arc-outer" />
+          <circle class="arc-track-inner" cx="110" cy="110" r="83" />
+          <circle class="arc-fill-inner" cx="110" cy="110" r="83" id="vc-arc-inner" />
+        </svg>
+        <div class="gauge-center"><span id="vc-actual">0,0</span></div>
+      </div>
       <span class="gauge-label">Vc [m/min]</span>
     </div>
 
@@ -478,7 +554,15 @@
 
     <div class="block">
       <span class="gauge-value" id="vf-value">34,8</span>
-      <div class="gauge-circle"><span id="vf-actual">0,0</span></div>
+      <div class="gauge-wrapper">
+        <svg class="gauge-arcs" viewBox="0 0 220 220">
+          <circle class="arc-track-outer" cx="110" cy="110" r="101" />
+          <circle class="arc-fill-outer" cx="110" cy="110" r="101" id="vf-arc-outer" />
+          <circle class="arc-track-inner" cx="110" cy="110" r="83" />
+          <circle class="arc-fill-inner" cx="110" cy="110" r="83" id="vf-arc-inner" />
+        </svg>
+        <div class="gauge-center"><span id="vf-actual">0,0</span></div>
+      </div>
       <span class="gauge-label">Vf [mm/min]</span>
     </div>
 
@@ -582,9 +666,27 @@
       return n.toFixed(1).replace('.', ',');
     }
 
+    // Arc constants (270° arcs)
+    const VC_MAX = 200;
+    const VF_MAX = 100;
+    const OUTER_ARC = 423.07; // 2π×101 × (240/360)
+    const INNER_ARC = 347.67; // 2π×83 × (240/360)
+
+    function updateArcs() {
+      const vcPct = Math.min(vcValue / VC_MAX, 1);
+      const vfPct = Math.min(vfValue / VF_MAX, 1);
+      // Outer red = set value
+      document.getElementById('vc-arc-outer').style.strokeDashoffset = OUTER_ARC * (1 - vcPct);
+      document.getElementById('vf-arc-outer').style.strokeDashoffset = OUTER_ARC * (1 - vfPct);
+      // Inner blue = slightly less (visual effect)
+      document.getElementById('vc-arc-inner').style.strokeDashoffset = INNER_ARC * (1 - vcPct * 0.7);
+      document.getElementById('vf-arc-inner').style.strokeDashoffset = INNER_ARC * (1 - vfPct * 0.7);
+    }
+
     function updateDisplay() {
       document.getElementById('vc-value').textContent = formatVal(vcValue);
       document.getElementById('vf-value').textContent = formatVal(vfValue);
+      updateArcs();
     }
 
     // Big buttons +/-
@@ -621,6 +723,9 @@
     }
     updateClock();
     setInterval(updateClock, 1000);
+
+    // Initial arc fill
+    updateArcs();
   </script>
 </body>
 </html>
